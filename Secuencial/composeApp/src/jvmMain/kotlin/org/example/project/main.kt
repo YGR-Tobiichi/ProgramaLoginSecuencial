@@ -22,5 +22,4 @@ fun main() = application {
     ) {
         Pantalla2BaseDeDatos()
     }
-
 }
