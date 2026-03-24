@@ -15,11 +15,4 @@ fun main() = application {
     ){
         LoginUsuario()
     }
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "BD",
-        state = rememberWindowState(size = DpSize(480.dp, 600.dp))
-    ) {
-        Pantalla2BaseDeDatos()
-    }
 }

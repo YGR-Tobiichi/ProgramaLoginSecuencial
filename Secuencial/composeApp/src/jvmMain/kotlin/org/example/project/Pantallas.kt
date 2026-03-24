@@ -28,9 +28,12 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Timer
+import java.util.TimerTask
 import kotlin.text.get
 
 var empezarBusqueda by mutableStateOf(false)
+val timer = Timer()
 
 class PeticionUsuario{
     var usuario = ""
@@ -47,6 +50,14 @@ fun LoginUsuario(){
     var password by remember { mutableStateOf("") }
     var esperando by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf("") }
+
+    // Estado
+    var filaActiva    by remember { mutableStateOf(-1) }
+    var filaEncontrada by remember { mutableStateOf(-1) }
+    var filaDenegada  by remember { mutableStateOf(-1) }
+
+    // Mensajes
+    var log by remember { mutableStateOf("Esperando peticiones...\n") }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(40.dp),
@@ -103,91 +114,86 @@ fun LoginUsuario(){
             else "❌ Credenciales incorrectas"
             esperando = false
         }
+
+        if(empezarBusqueda){
+            // Algoritmo de busqueda
+            timer.schedule(object: TimerTask(){
+                override fun run() {
+                    empezarBusqueda = false
+                    var encontrado = false
+                    for (index in usuariosPrueba.indices) {
+
+                        filaActiva = index
+                        log += "[REVISANDO] fila $index — ${usuariosPrueba[index].nombre}\n"
+                        log += "[RECIBIDO] usuario: '${peticion.usuario}'\n"
+
+
+                        // Compara credenciales
+                        if (usuariosPrueba[index].nombre    == peticion.usuario &&
+                            usuariosPrueba[index].password  == peticion.password) {
+
+                            filaEncontrada = index
+                            log += "[ENCONTRADO] ✅ — rol: ${usuariosPrueba[index].nombre}\n"
+                            encontrado = true
+                            peticion.autorizado = true
+
+                            break
+                        }
+                    }
+
+                    if (!encontrado) {
+                        filaDenegada = filaActiva
+                        filaActiva   = -1
+                        log += "[RESULTADO] ❌ usuario no encontrado\n"
+                        peticion.autorizado  = false
+                    }
+
+                    peticion.respuesta = true
+                    log += "[RESPONDIDO] enviado al cliente → $encontrado\n"
+                }
+            }, 2000)
+
+        }
     }
 }
 
 
-@Composable
-fun Pantalla2BaseDeDatos(){
-
-    // Estado
-    var filaActiva    by remember { mutableStateOf(-1) }
-    var filaEncontrada by remember { mutableStateOf(-1) }
-    var filaDenegada  by remember { mutableStateOf(-1) }
-
-    // Mensajes
-    var log by remember { mutableStateOf("Esperando peticiones...\n") }
-
-    if(empezarBusqueda){
-        // Algoritmo de busqueda
-        empezarBusqueda = false
-        var encontrado = false
-        for (index in usuariosPrueba.indices) {
-
-            filaActiva = index
-            log += "[REVISANDO] fila $index — ${usuariosPrueba[index].nombre}\n"
-            log += "[RECIBIDO] usuario: '${peticion.usuario}'\n"
-
-
-            // Compara credenciales
-            if (usuariosPrueba[index].nombre    == peticion.usuario &&
-                usuariosPrueba[index].password  == peticion.password) {
-
-                filaEncontrada = index
-                log += "[ENCONTRADO] ✅ — rol: ${usuariosPrueba[index].nombre}\n"
-                encontrado = true
-                peticion.autorizado = true
-
-                break
-            }
-        }
-
-        if (!encontrado) {
-            filaDenegada = filaActiva
-            filaActiva   = -1
-            log += "[RESULTADO] ❌ usuario no encontrado\n"
-            peticion.autorizado  = false
-        }
-
-        peticion.respuesta = true
-        log += "[RESPONDIDO] enviado al cliente → $encontrado\n"
-    }
-
-
-    // UI
-    Column(
-        modifier = Modifier.fillMaxSize().padding(40.dp)
-    ) {
-        Text(
-            text = "PANTALLA 2.",
-            modifier = Modifier.padding(8.dp, top = 20.dp),
-            fontSize = 10.sp
-        )
-        Text(
-            text = "BASE DE DATOS",
-            modifier = Modifier.padding(8.dp, top = 0.dp),
-            fontSize = 40.sp
-        )
-
-        // Tabla con los estados visuales
-        TablaUsuarios(
-            usuarios       = usuariosPrueba,
-
-        )
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-
-        // Log de mensajes
-        Text(
-            text = "Log del servidor:",
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-        Text(
-            text = log,
-            fontSize = 11.sp,
-            fontFamily = FontFamily.Monospace,
-            modifier = Modifier.verticalScroll(rememberScrollState())
-        )
-    }
-}
+//@Composable
+//fun Pantalla2BaseDeDatos(){
+//    // UI
+//    Column(
+//        modifier = Modifier.fillMaxSize().padding(40.dp)
+//    ) {
+//        Text(
+//            text = "PANTALLA 2.",
+//            modifier = Modifier.padding(8.dp, top = 20.dp),
+//            fontSize = 10.sp
+//        )
+//        Text(
+//            text = "BASE DE DATOS",
+//            modifier = Modifier.padding(8.dp, top = 0.dp),
+//            fontSize = 40.sp
+//        )
+//
+//        // Tabla con los estados visuales
+//        TablaUsuarios(
+//            usuarios       = usuariosPrueba,
+//
+//        )
+//
+//        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+//
+//        // Log de mensajes
+//        Text(
+//            text = "Log del servidor:",
+//            style = MaterialTheme.typography.labelMedium,
+//            modifier = Modifier.padding(bottom = 4.dp)
+//        )
+//        Text(
+//            text = log,
+//            fontSize = 11.sp,
+//            fontFamily = FontFamily.Monospace,
+//            modifier = Modifier.verticalScroll(rememberScrollState())
+//        )
+//    }
+//}
